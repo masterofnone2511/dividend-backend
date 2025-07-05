@@ -1,34 +1,36 @@
 const express = require('express');
-const axios = require('axios');
 const cors = require('cors');
+
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
+app.use(express.json());
 
-const ALPHA_VANTAGE_KEY = 'TW8Z3AD00FDI6WK4'
+// Home route
+app.get('/', (req, res) => {
+  res.send('Dividend backend is running!');
+});
 
-app.get('/dividends', async (req, res) => {
-  const symbols = req.query.symbols?.split(',') || [];
+// Dummy dividend route
+app.get('/dividends', (req, res) => {
+  const symbols = req.query.symbols;
+  if (!symbols) {
+    return res.status(400).json({ error: 'Symbols query parameter is required' });
+  }
 
-  const results = await Promise.all(symbols.map(async (symbol) => {
-    try {
-      const url = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${symbol}&apikey=${ALPHA_VANTAGE_KEY}`;
-      const response = await axios.get(url);
-      const data = response.data;
-      return {
-        symbol,
-        dividendYield: data.DividendYield,
-        exDate: data.ExDividendDate
-      };
-    } catch (err) {
-      return { symbol, error: 'Failed to fetch' };
-    }
+  const symbolList = symbols.split(',');
+  const data = symbolList.map(symbol => ({
+    symbol,
+    dividend: '10.5',
+    currency: 'INR',
+    date: '2025-07-01',
   }));
 
-  res.json(results);
+  res.json(data);
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`✅ Server is running on port ${PORT}`);
 });
+
