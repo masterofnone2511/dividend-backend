@@ -1,36 +1,34 @@
 const express = require('express');
 const cors = require('cors');
-
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.json());
 
-// Home route
 app.get('/', (req, res) => {
   res.send('Dividend backend is running!');
 });
 
-// Dummy dividend route
 app.get('/dividends', (req, res) => {
-  const symbols = req.query.symbols;
+  const { symbols } = req.query;
+
+  const allData = [
+    { symbol: "TCS", dividend: 10.5, currency: "INR", date: "2025-07-01" },
+    { symbol: "INFY", dividend: 10.5, currency: "INR", date: "2025-07-01" },
+    { symbol: "RELIANCE", dividend: 10.5, currency: "INR", date: "2025-07-01" }
+  ];
+
   if (!symbols) {
-    return res.status(400).json({ error: 'Symbols query parameter is required' });
+    return res.json(allData);
   }
 
-  const symbolList = symbols.split(',');
-  const data = symbolList.map(symbol => ({
-    symbol,
-    dividend: '10.5',
-    currency: 'INR',
-    date: '2025-07-01',
-  }));
-
-  res.json(data);
+  const requestedSymbols = symbols.split(',').map(s => s.trim().toUpperCase());
+  const filtered = allData.filter(item => requestedSymbols.includes(item.symbol));
+  
+  res.json(filtered);
 });
 
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✅ Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
 
