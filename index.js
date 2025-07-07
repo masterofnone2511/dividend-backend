@@ -17,11 +17,11 @@ app.get('/dividends', async (req, res) => {
   for (const symbol of symbols) {
     try {
       const data = await yahooFinance.quoteSummary(symbol, { modules: ['summaryDetail'] });
-      console.log(`Data for ${symbol}:`, data); // ← check this in logs
+      console.log(`Data for ${symbol}:`, data);
 
       const dividend = data.summaryDetail?.dividendRate || null;
       const dividendDate = data.summaryDetail?.exDividendDate
-        ? new Date(data.summaryDetail.exDividendDate * 1000).toISOString().split('T')[0]
+        ? new Date(data.summaryDetail.exDividendDate).toISOString().split('T')[0]
         : 'N/A';
 
       results.push({
@@ -45,6 +45,6 @@ app.get('/dividends', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`✅ Server is running on port ${PORT}`);
 });
 
