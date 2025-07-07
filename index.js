@@ -1,33 +1,49 @@
 const express = require('express');
 const cors = require('cors');
+const yahooFinance = require('yahoo-finance2').default;
+
 const app = express();
+const PORT = process.env.PORT || 10000;
 
 app.use(cors());
 
-app.get('/', (req, res) => {
-  res.send('Dividend backend is running!');
-});
+app.get('/dividends', async (req, res) => {
+  const symbolsParam = req.query.symbols;
+  if (!symbolsParam) return res.status(400).json({ error: 'Missing symbols' });
 
-app.get('/dividends', (req, res) => {
-  const { symbols } = req.query;
+  const symbols = symbolsParam.split(',');
+  const results = [];
 
-  const allData = [
-    { symbol: "TCS", dividend: 10.5, currency: "INR", date: "2025-07-01" },
-    { symbol: "INFY", dividend: 10.5, currency: "INR", date: "2025-07-01" },
-    { symbol: "RELIANCE", dividend: 10.5, currency: "INR", date: "2025-07-01" }
-  ];
+  for (const symbol of symbols) {
+    try {
+      const data = await yahooFinance.quoteSummary(symbol, { modules: ['summaryDetail'] });
+      console.log(`Data for ${symbol}:`, data); // ← check this in logs
 
-  if (!symbols) {
-    return res.json(allData);
+      const dividend = data.summaryDetail?.dividendRate || null;
+      const dividendDate = data.summaryDetail?.exDividendDate
+        ? new Date(data.summaryDetail.exDividendDate * 1000).toISOString().split('T')[0]
+        : 'N/A';
+
+      results.push({
+        symbol,
+        dividend,
+        currency: data.summaryDetail.currency || 'INR',
+        date: dividendDate,
+      });
+    } catch (err) {
+      console.log(`Error fetching ${symbol}:`, err.message);
+      results.push({
+        symbol,
+        dividend: null,
+        currency: 'N/A',
+        date: 'N/A',
+      });
+    }
   }
 
-  const requestedSymbols = symbols.split(',').map(s => s.trim().toUpperCase());
-  const filtered = allData.filter(item => requestedSymbols.includes(item.symbol));
-  
-  res.json(filtered);
+  res.json(results);
 });
 
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
